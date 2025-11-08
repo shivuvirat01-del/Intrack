@@ -1,0 +1,1673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="manifest" href="manifest.json">
+  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investment Tracker</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN for the graph -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chart.js Datalabels Plugin for showing percentages on the chart -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <!-- Phosphor Icons for the menu button -->
+    <script src="https://unpkg.com/phosphor-icons"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Define custom properties for styling */
+        :root {
+            /* Default dark theme values from the user's screenshot */
+            --bg-color-primary: #12121e; /* Deep dark background */
+            --bg-color-card: #1f1f32; /* Slightly lighter card background */
+            --text-color-primary: #e0e0f0; /* Light text for contrast */
+            --text-color-secondary: #a0a0c0; /* Lighter gray for secondary text */
+            --text-color-label: #8080a0; /* A more subtle label color */
+            --border-color: #383852; /* A clear border color */
+            --primary-color: #7d44ff; /* A vibrant purple for accents */
+            --positive-gain-color: #22c55e; /* Vibrant green for positive values */
+            --negative-gain-color: #ef4444; /* Standard red for negative values */
+            --button-bg-secondary: #3b3b5c; /* Dark gray for secondary buttons */
+            --button-text-secondary: #e0e0f0; /* Light text for secondary buttons */
+            --chart-grid-color: rgba(60, 60, 80, 0.5);
+            --chart-label-color: #a0a0c0;
+            --chart-tooltip-bg: rgba(31, 31, 50, 0.9);
+            --chart-tooltip-text: #e0e0f0;
+            --dropdown-bg: #1f1f32;
+            --dropdown-border: #383852;
+            --dropdown-item-hover: #3b3b5c;
+        }
+#nkn{
+font-weight:bold;
+color:var(--primary-color);
+}
+        /* Light theme preset */
+        body.light-theme {
+            --bg-color-primary: #f1f5f9;
+            --bg-color-card: #ffffff;
+            --text-color-primary: #1e293b;
+            --text-color-secondary: #64748b;
+            --text-color-label: #94a3b8;
+            --border-color: #e2e8f0;
+            --primary-color: #6366f1;
+            --positive-gain-color: #16a34a;
+            --negative-gain-color: #dc2626;
+            --button-bg-secondary: #e2e8f0;
+            --button-text-secondary: #475569;
+            --chart-grid-color: rgba(226, 232, 240, 0.5);
+            --chart-label-color: #64748b;
+            --chart-tooltip-bg: rgba(255, 255, 255, 0.9);
+            --chart-tooltip-text: #1a202c;
+            --dropdown-bg: #ffffff;
+            --dropdown-border: #e2e8f0;
+            --dropdown-item-hover: #f1f5f9;
+        }
+
+        /* General styles using custom properties */
+        body {
+            background-color: var(--bg-color-primary);
+            color: var(--text-color-primary);
+        }
+        .text-gradient {
+            background-image: linear-gradient(45deg, var(--primary-color), var(--primary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .card {
+            background-color: var(--bg-color-card);
+            border-color: var(--border-color);
+            border-width: 1px;
+            transition: background-color 0.3s, border-color 0.3s, box-shadow 0.3s;
+        }
+        .form-input, .form-select {
+            background-color: var(--bg-color-card);
+            border-color: var(--border-color);
+            color: var(--text-color-primary);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 1px var(--primary-color);
+        }
+        .table-header {
+            background-color: var(--button-bg-secondary);
+            border-color: var(--border-color);
+        }
+        .table-row {
+            background-color: var(--bg-color-card);
+            border-color: var(--border-color);
+        }
+        .table-row:not(:last-child) {
+            border-bottom-width: 1px;
+        }
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            transition: all 0.2s ease-in-out;
+        }
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .btn-secondary {
+            background-color: var(--button-bg-secondary);
+            color: var(--button-text-secondary);
+            transition: all 0.2s ease-in-out;
+        }
+        .btn-secondary:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .text-positive {
+            color: var(--positive-gain-color);
+        }
+        .text-negative {
+            color: var(--negative-gain-color);
+        }
+        .dropdown-menu {
+            transition: all 0.3s ease-out;
+            opacity: 0;
+            transform: translateY(-10px);
+            pointer-events: none;
+            z-index: 10;
+            background-color: var(--dropdown-bg);
+            border-color: var(--dropdown-border);
+            color: var(--text-color-primary);
+        }
+        .dropdown-menu.visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+        .disabled-btn {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        
+        .modal {
+            transition: all 0.3s ease-in-out;
+            opacity: 0;
+            visibility: hidden;
+        }
+        .modal.open {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        /* Style for the color input button */
+        #graph-color-picker {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            border: 2px solid var(--border-color);
+            border-radius: 50%;
+            cursor: pointer;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        #graph-color-picker::-webkit-color-swatch {
+            border: none;
+            border-radius: 50%;
+        }
+
+        #graph-color-picker::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+        
+        #graph-color-picker:hover {
+            transform: scale(1.1);
+        }
+        
+        /* Custom styles for table header sort buttons */
+        .sort-btn {
+            background: none;
+            border: none;
+            color: inherit;
+            padding: 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            font-size: inherit;
+            font-weight: inherit;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .sort-icon {
+            margin-left: 0.25rem;
+            width: 1rem;
+            height: 1rem;
+            display: inline-block;
+        }
+        
+        .dropdown-item:hover {
+            background-color: var(--dropdown-item-hover);
+        }
+        
+        
+    </style>
+    <!-- Include Bootstrap Icons CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    
+   
+</head>
+<body class="p-4 sm:p-8 dark-theme">
+    <div class="max-w-4xl mx-auto space-y-8">
+        <!-- Header with Menu button -->
+        <div class="flex justify-between items-center mb-6 relative">
+            <h1 class="text-3xl font-bold" style="color: var(--text-color-primary);">Investment Tracker</h1>
+            <button id="menu-btn" class="p-2 rounded-full btn-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors">
+                <i class="ph-list-bold text-xl" style="color: var(--button-text-secondary);"></i>
+            </button>
+            
+            <!-- Dropdown Menu -->
+            <div id="settings-menu" class="dropdown-menu absolute right-0 top-12 mt-2 w-64 p-4 rounded-xl shadow-2xl border">
+                <h3 class="font-bold mb-2" style="color: var(--text-color-primary);">Settings</h3>
+                <div class="space-y-4">
+                    <!-- Import/Export Section -->
+                    <div>
+                        <label class="block text-sm font-medium mb-1" style="color: var(--text-color-label);">Data</label>
+                        <div class="flex space-x-2">
+                            <input type="file" id="import-file-input" class="hidden" accept=".json">
+                            <button id="import-btn" class="flex-1 py-1 px-2 rounded-md text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500" style="border-color: var(--border-color); color: var(--text-color-primary); background-color: var(--button-bg-secondary);">Import</button>
+                            <button id="export-btn" class="flex-1 py-1 px-2 rounded-md text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500" style="border-color: var(--border-color); color: var(--text-color-primary); background-color: var(--button-bg-secondary);">Export</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Theme Selection -->
+                    <div>
+                        <label class="block text-sm font-medium mb-1" style="color: var(--text-color-label);">Theme Presets</label>
+                        <div class="flex space-x-2">
+                            <button id="theme-dark" class="flex-1 py-1 px-2 rounded-md text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500" style="border-color: var(--border-color); color: var(--text-color-primary); background-color: var(--button-bg-secondary);">Dark</button>
+                            <button id="theme-light" class="flex-1 py-1 px-2 rounded-md text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500" style="border-color: var(--border-color); color: var(--text-color-primary); background-color: var(--button-bg-secondary);">Light</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Graph Color Selection -->
+                    <div class="flex items-center justify-between">
+                        <label for="graph-color-picker" class="block text-sm font-medium" style="color: var(--text-color-label);">Graph Line Color</label>
+                        <input type="color" id="graph-color-picker" value="#7d44ff">
+                    </div>
+
+                    <!-- Reset button -->
+                    <div>
+                        <button id="reset-colors-btn" class="w-full py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
+                            Reset Graph Color
+                        </button><br><br>
+                        <button onclick="location.href='sip/index.html'" id="reset-colors-btn" class="w-full py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
+                        Calculate SIP
+                        </button><br><br>
+                        
+                        <button onclick="location.href='logout.html'" id="reset-colors-btn" class="w-full py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
+                        Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Portfolio Summary Card -->
+        <div class="card p-6 rounded-3xl shadow-lg">
+        <h3 id="nkn"></h3>
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4">
+                <h1 class="text-3xl font-bold" style="color: var(--text-color-primary);">Portfolio Overview</h1>
+                <div id="last-updated" class="text-sm mt-2 sm:mt-0" style="color: var(--text-color-secondary);"></div>
+            </div>
+            <!-- Current Value and Overall Return -->
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6">
+                <div>
+                    <span class="text-sm font-medium" style="color: var(--text-color-label);">Total Current Value</span>
+                    <div class="text-5xl font-extrabold text-gradient" id="current-value">₹0.00</div>
+                </div>
+                <div class="mt-4 sm:mt-0 sm:text-right">
+                    <div id="overall-return" class="text-2xl font-bold"></div>
+                    <div id="overall-percentage" class="text-sm font-medium"></div>
+                </div>
+            </div>
+            <!-- Invested Value and Today's Gain -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center border-t pt-4" style="border-color: var(--border-color);">
+            <div>
+            <span class="text-xs font-medium" style="color: var(--text-color-label);">Invested Value</span>
+            <div id="invested-value" class="text-xl font-bold" style="color: var(--text-color-primary);">₹0.00</div>
+            </div>
+            <div>
+            <span class="text-xs font-medium" style="color: var(--text-color-label);">Today's Gain</span>
+            <div id="daily-gain" class="text-xl font-bold">₹0.00</div>
+            </div>
+            <div>
+            <span class="text-xs font-medium" style="color: var(--text-color-label);">CAGR</span>
+            <div id="cagr-value" class="text-xl font-bold">0.00%</div>
+            </div>
+            <div>
+            <span class="text-xs font-medium" style="color: var(--text-color-label);">XIRR</span>
+            <div id="xirr-value" class="text-xl font-bold">0.00%</div>
+            </div>
+            </div>
+        </div>
+        
+        <!-- Growth Over Time Chart -->
+        <div class="card p-6 rounded-3xl shadow-lg">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
+                <h2 class="text-xl font-bold mb-2 sm:mb-0" style="color: var(--text-color-primary);">Growth Over Time</h2>
+                <!-- Buttons for switching graph type and time frame -->
+                <div class="flex flex-wrap items-center justify-start space-x-2 space-y-2 sm:space-y-0">
+                    <!-- Chart type buttons -->
+                    <div class="flex space-x-2">
+                    
+                        <button id="chart-type-line" class="py-1 px-3 text-sm font-medium rounded-md btn-primary"> <i class="bi bi-graph-up"></i></button>
+                        <button id="chart-type-pie" class="py-1 px-3 text-sm font-medium rounded-md btn-secondary"><i class="bi bi-pie-chart"></i></button>
+                    </div>
+                    <!-- Timeframe buttons -->
+                    <div class="" style="display:flex;gap:8px;justify-content:space-around;">
+                        <button id="timeframe-monthly" class="py-1 px-2 text-sm font-medium rounded-md btn-secondary">Monthly</button>
+                        <button id="timeframe-quarterly" class="py-1 px-2 text-sm font-medium rounded-md btn-secondary">Quarterly</button>
+                        <button id="timeframe-yearly" class="py-1 px-2 text-sm font-medium rounded-md btn-secondary">Yearly</button>
+                        <button id="timeframe-all" class="py-1 px-2 text-sm font-medium rounded-md btn-primary">All</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- New: Calculation type and comparison buttons -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center my-4 space-y-2 sm:space-y-0 sm:space-x-4">
+                <!-- Dropdown for calculation method -->
+                <div class="relative inline-block text-left w-full sm:w-auto">
+                    <button id="calc-dropdown-btn" type="button" class="inline-flex justify-between w-full rounded-md border shadow-sm px-4 py-2 bg-gray-700 text-sm font-medium text-white hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500" style="background-color: var(--button-bg-secondary); border-color: var(--border-color); color: var(--button-text-secondary);">
+                        <span id="calc-dropdown-label">Latest Value</span>
+                        <i class="ph-caret-down-bold ml-2"></i>
+                    </button>
+                    <div id="calc-dropdown-menu" class="origin-top-left absolute left-0 mt-2 w-full rounded-md shadow-lg dropdown-menu border z-20" style="background-color: var(--dropdown-bg); border-color: var(--dropdown-border);">
+                        <div class="py-1" role="menu" aria-orientation="vertical" aria-labelledby="calc-dropdown-btn">
+                            <a href="#" class="block px-4 py-2 text-sm dropdown-item" data-value="latest">Latest Value</a>
+                            <a href="#" class="block px-4 py-2 text-sm dropdown-item" data-value="gain">Total Gain</a>
+                            <a href="#" class="block px-4 py-2 text-sm dropdown-item" data-value="average">Average Value</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Toggle buttons for chart comparison -->
+                <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto mt-2 sm:mt-0">
+                    <button id="toggle-current-btn" class="py-2 px-4 text-sm font-medium rounded-md btn-primary">
+                        Hide Current Value
+                    </button>
+                    <button id="toggle-invested-btn" class="py-2 px-4 text-sm font-medium rounded-md btn-secondary">
+                        Show Invested Amount
+                    </button>
+                </div>
+            </div>
+
+            <div style="display:flex;width:100%;overflow-x:auto;" class="h-64 mm:h-80 chart-container">
+                <canvas style="width:100%;margin:0px;padding:0px;" id="growthChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Data Input and Management Section -->
+        <div class="card p-6 rounded-3xl shadow-lg">
+            <h2 class="text-xl font-bold mb-4" style="color: var(--text-color-primary);">Manage Portfolio</h2>
+            
+            <!-- Form to add/update data -->
+            <form id="data-form" class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label for="entry-date" class="block text-sm font-medium mb-1" style="color: var(--text-color-label);">Date</label>
+                        <input style="border:2px solid #8080a0;color:var(--text-color-primary)" type="date" value="2025-10-05" id="entry-date" class="form-input mt-1 block w-full rounded-md shadow-sm sm:text-sm p-2" required>
+                    </div>
+                    <div>
+                        <label for="new-value" class="block text-sm font-medium mb-1" style="color: var(--text-color-label);">Current Value (₹)</label>
+                        <input style="border:2px solid #8080a0;color:var(--text-color-primary)" type="number"  id="new-value" class="form-input mt-1 block w-full rounded-md shadow-sm sm:text-sm p-2" required>
+                    </div>
+                     <div>
+                        <label for="invested-input" class="block text-sm font-medium mb-1" style="color: var(--text-color-label);">Invested Amount (₹)</label>
+                        <input style="border:2px solid #8080a0;color:var(--text-color-primary)"  type="number" id="invested-input" class="form-input mt-1 block w-full rounded-md shadow-sm sm:text-sm p-2" required>
+                    </div>
+                </div>
+                
+                <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 mt-6">
+                    <button type="submit" id="submit-btn" class="flex-1 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md btn-primary">
+                        Add Data Point
+                    </button>
+                    <button type="button" id="cancel-btn" class="flex-1 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md btn-secondary hidden">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+            
+            <!-- List of all data points for editing -->
+            <div id="data-list-section" class="mt-8">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-2 sm:space-y-0">
+                    <h3 class="text-lg font-bold" style="color: var(--text-color-label);">Past Data Points</h3>
+                    <!-- Toggle button for enabling/disabling actions -->
+                    <div class="flex space-x-2">
+                        <button type="button" id="toggle-actions-btn" class="py-1 px-3 border border-transparent text-sm font-medium rounded-md text-indigo-400 bg-indigo-800/50 hover:bg-indigo-800/70 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
+                            Disable Actions
+                        </button>
+                        <button type="button" id="clear-data-btn" class="py-1 px-3 border border-transparent text-sm font-medium rounded-md text-red-400 bg-red-800/50 hover:bg-red-800/70 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
+                            Clear All
+                        </button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto rounded-lg border" style="border-color: var(--border-color);">
+                    <table class="min-w-full divide-y" style="background-color: var(--bg-color-card); border-color: var(--border-color);">
+                        <thead class="table-header">
+                            <tr>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style="color: var(--button-text-secondary);">
+                                    <button class="sort-btn" data-sort-key="date">
+                                        Date
+                                        <span class="sort-icon">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-8 8h6v8h4v-8h6z"/></svg>
+                                        </span>
+                                    </button>
+                                </th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style="color: var(--button-text-secondary);">
+                                    <button class="sort-btn" data-sort-key="value">
+                                        Current Value (₹)
+                                        <span class="sort-icon"></span>
+                                    </button>
+                                </th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style="color: var(--button-text-secondary);">
+                                    <button class="sort-btn" data-sort-key="invested">
+                                        Invested Amount (₹)
+                                        <span class="sort-icon"></span>
+                                    </button>
+                                </th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style="color: var(--button-text-secondary);">
+                                    <button class="sort-btn" data-sort-key="profitLoss">
+                                        Profit/Loss (₹)
+                                        <span class="sort-icon"></span>
+                                    </button>
+                                </th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style="color: var(--button-text-secondary);">
+                                    <button class="sort-btn" data-sort-key="profitLossPercentage">
+                                        Profit/Loss (%)
+                                        <span class="sort-icon"></span>
+                                    </button>
+                                </th>
+                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider" style="color: var(--button-text-secondary);">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="data-table-body" class="divide-y" style="border-color: var(--border-color);">
+                            <!-- Data points will be rendered here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Box (for alerts/confirmations) -->
+    <div id="message-modal" class="modal fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75">
+        <div class="p-8 rounded-xl shadow-2xl max-w-sm w-full mx-4 border text-center" style="background-color: var(--bg-color-card); border-color: var(--border-color);">
+            <p id="modal-text" class="mb-6 text-lg font-medium" style="color: var(--text-color-primary);"></p>
+            <div class="flex justify-center space-x-4">
+                <button id="modal-confirm-btn" class="px-6 py-2 bg-red-600 text-white rounded-md font-semibold hover:bg-red-700 transition-colors hidden">Confirm</button>
+                <button id="modal-close-btn" class="px-6 py-2 btn-primary rounded-md font-semibold transition-colors">OK</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+    
+    
+    // Check if user exists when page loads
+    window.onload = function() {
+    const userId = localStorage.getItem('userId');
+    const password = localStorage.getItem('password');
+    
+    // If user not found, redirect immediately
+    if (!userId || !password) {
+    window.location.href = 'index.html';
+    }
+    };
+    </script>
+    <script>
+    
+    
+    function setDate(id) {
+    let d = new Date();
+    let val = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    document.getElementById(id).value = val;
+    }
+    
+    setDate("entry-date");
+        // --- Utility to generate a unique ID for each data point ---
+        function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        // --- Utility to format numbers with commas ---
+        function formatNumberWithCommas(num) {
+            return num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+        
+        // Function to get stored user details
+        function getUserDetails() {
+        const userId = localStorage.getItem('userId');
+        const password = localStorage.getItem('password');
+        return { userId, password };
+        }
+        
+        let y= JSON.parse(JSON.stringify(getUserDetails()));
+        document.getElementById("nkn").innerHTML=`Welcome `+y["userId"]+``;
+        
+        // --- IndexedDB Configuration ---
+        const DB_NAME = 'InvestmentDB';
+        const DB_VERSION = 1;
+        const STORE_NAME = 'portfolioStore';
+        const DATA_KEY = 'mistockpor';
+        let db;
+
+        // --- Data and State Management ---
+        let portfolioData = [];
+        let theme = 'dark-theme';
+        let graphLineColor = '#7d44ff';
+        
+        let myChart;
+        let editingId = null; // Use a unique ID instead of an index
+        let actionsEnabled = true;
+        let chartType = 'line';
+        let chartTimeframe = 'all';
+        let showCurrentLine = true;
+        let showInvestedLine = false;
+        let chartCalculationType = 'latest';
+        
+        let sortColumn = 'date';
+        let sortDirection = 'desc';
+
+        // --- Utility and UI Functions ---
+
+        // Utility function for showing custom messages in a modal
+        const showMessage = (text, type = 'alert', onConfirm = null) => {
+            const modal = document.getElementById('message-modal');
+            const modalText = document.getElementById('modal-text');
+            const confirmBtn = document.getElementById('modal-confirm-btn');
+            const closeBtn = document.getElementById('modal-close-btn');
+
+            modalText.textContent = text;
+            
+            if (type === 'confirm') {
+                confirmBtn.classList.remove('hidden');
+                closeBtn.textContent = 'Cancel';
+                confirmBtn.onclick = () => {
+                    if (onConfirm) onConfirm();
+                    modal.classList.remove('open');
+                };
+                closeBtn.onclick = () => {
+                    modal.classList.remove('open');
+                };
+            } else {
+                confirmBtn.classList.add('hidden');
+                closeBtn.textContent = 'OK';
+                closeBtn.onclick = () => {
+                    modal.classList.remove('open');
+                };
+            }
+            modal.classList.add('open');
+        };
+        
+        // Applies a selected theme preset
+        const applyThemePreset = (newTheme) => {
+            const body = document.body;
+            body.classList.remove('dark-theme', 'light-theme');
+            body.classList.add(newTheme);
+            theme = newTheme;
+            saveData();
+            renderChart();
+        };
+
+        // Resets the graph line color to its default value
+        const resetGraphColor = () => {
+            const defaultGraphColor = '#7d44ff';
+            graphLineColor = defaultGraphColor;
+            document.getElementById('graph-color-picker').value = defaultGraphColor;
+            saveData();
+            renderChart();
+            showMessage("Graph color has been reset to the default.");
+        };
+
+        // Function to calculate XIRR using Newton's method
+function calculateXIRR(cashflows, guess = 0.1) {
+    const maxIterations = 100;
+    const tol = 1e-7;
+    let rate = guess;
+
+    for (let i = 0; i < maxIterations; i++) {
+        let f = 0;
+        let df = 0;
+        const t0 = cashflows[0].date;
+
+        cashflows.forEach(cf => {
+            const years = (cf.date - t0) / (1000 * 60 * 60 * 24 * 365.25);
+            f += cf.amount / Math.pow(1 + rate, years);
+            df += -years * cf.amount / Math.pow(1 + rate, years + 1);
+        });
+
+        const newRate = rate - f / df;
+        if (Math.abs(newRate - rate) < tol) {
+            return rate;
+        }
+        rate = newRate;
+    }
+    return rate;
+}
+
+// Function to update the main UI metrics and re-render everything
+        // This is the core synchronization function
+        const updateAllUI = () => {
+            updateSummaryMetrics();
+            renderDataTable();
+            renderChart();
+            saveData();
+        };
+
+        // Function to calculate XIRR using Newton's method
+function calculateXIRR(cashflows, guess = 0.1) {
+    const maxIterations = 100;
+    const tol = 1e-7;
+    let rate = guess;
+
+    for (let i = 0; i < maxIterations; i++) {
+        let f = 0;
+        let df = 0;
+        const t0 = cashflows[0].date;
+
+        cashflows.forEach(cf => {
+            const years = (cf.date - t0) / (1000 * 60 * 60 * 24 * 365.25);
+            f += cf.amount / Math.pow(1 + rate, years);
+            df += -years * cf.amount / Math.pow(1 + rate, years + 1);
+        });
+
+        const newRate = rate - f / df;
+        if (Math.abs(newRate - rate) < tol) {
+            return rate;
+        }
+        rate = newRate;
+    }
+    return rate;
+}
+
+// Function to update the main UI metrics
+        const updateSummaryMetrics = () => {
+            const currentValueEl = document.getElementById('current-value');
+            const investedValueEl = document.getElementById('invested-value');
+            const overallReturnEl = document.getElementById('overall-return');
+            const overallPercentageEl = document.getElementById('overall-percentage');
+            const dailyGainEl = document.getElementById('daily-gain');
+            const lastUpdatedEl = document.getElementById('last-updated');
+            const cagrEl = document.getElementById('cagr-value');
+            const xirrEl = document.getElementById('xirr-value');
+            
+            // Reset to default values
+            currentValueEl.textContent = '₹0.00';
+            investedValueEl.textContent = '₹0.00';
+            overallReturnEl.textContent = '₹0.00';
+            overallPercentageEl.textContent = '(0.00%)';
+            overallPercentageEl.className = 'text-sm font-medium';
+            dailyGainEl.textContent = '₹0.00';
+            dailyGainEl.className = 'text-xl font-bold';
+            lastUpdatedEl.textContent = '';
+            
+            if (portfolioData.length === 0) return;
+            
+            // First, sort the data by date to get the latest entry and ensure daily gain is correct
+            const sortedByDate = [...portfolioData].sort((a, b) => a.date - b.date);
+
+            // Per your instruction, the invested amount is NOT cumulative, it is the value of the most recent entry.
+            const latestData = sortedByDate[sortedByDate.length - 1];
+            const currentValue = latestData.value;
+            const totalInvested = latestData.invested; // Use the most recent invested amount
+            const overallReturn = currentValue - totalInvested;
+            const overallPercentage = (totalInvested !== 0) ? (overallReturn / totalInvested) * 100 : 0;
+
+            // Calculate daily gain
+            let dailyGain = 0;
+            if (sortedByDate.length > 1) {
+                const previousValue = sortedByDate[sortedByDate.length - 2].value;
+                dailyGain = currentValue - previousValue;
+            }
+
+            // Update text content with commas
+            currentValueEl.textContent = `₹${formatNumberWithCommas(currentValue)}`;
+            investedValueEl.textContent = `₹${formatNumberWithCommas(totalInvested)}`;
+            overallReturnEl.textContent = `₹${formatNumberWithCommas(overallReturn)}`;
+            overallPercentageEl.textContent = `(${overallPercentage.toFixed(2)}%)`;
+            dailyGainEl.textContent = `₹${formatNumberWithCommas(dailyGain)}`;
+
+            // Apply color based on gain/loss
+            const applyColor = (element, value) => {
+                element.classList.remove('text-positive', 'text-negative');
+                if (value >= 0) {
+                    element.classList.add('text-positive');
+                } else {
+                    element.classList.add('text-negative');
+                }
+            };
+            applyColor(overallReturnEl, overallReturn);
+            applyColor(overallPercentageEl, overallReturn);
+            applyColor(dailyGainEl, dailyGain);
+            
+            // 📈 Calculate and display CAGR
+            if (sortedByDate.length > 1) {
+                const firstData = sortedByDate[0];
+                const latestData = sortedByDate[sortedByDate.length - 1];
+
+                const initialValue = firstData.invested;
+                const finalValue = latestData.value;
+
+                const years = (latestData.date - firstData.date) / (1000 * 60 * 60 * 24 * 365.25);
+
+                let cagr = 0;
+                if (initialValue > 0 && years > 0) {
+                    cagr = (Math.pow(finalValue / initialValue, 1 / years) - 1) * 100;
+                }
+
+                cagrEl.textContent = `${cagr.toFixed(2)}%`;
+                cagrEl.classList.remove('text-positive', 'text-negative');
+                cagrEl.classList.add(cagr >= 0 ? 'text-positive' : 'text-negative');
+            } else {
+                cagrEl.textContent = "0.00%";
+                cagrEl.classList.remove('text-positive', 'text-negative');
+            }
+
+            // 📊 Calculate and display XIRR
+            if (portfolioData.length > 1) {
+                const cashflows = [];
+                const sortedByDate = [...portfolioData].sort((a, b) => a.date - b.date);
+
+                // Track only incremental investments
+                let prevInvested = 0;
+                sortedByDate.forEach(item => {
+                    if (item.invested > prevInvested) {
+                        const diff = item.invested - prevInvested;
+                        cashflows.push({ date: item.date, amount: -diff });
+                    }
+                    prevInvested = item.invested;
+                });
+
+                // Add final portfolio value as positive cashflow
+                const latestData = sortedByDate[sortedByDate.length - 1];
+                cashflows.push({ date: latestData.date, amount: latestData.value });
+
+                let xirr = calculateXIRR(cashflows) * 100;
+                if (isFinite(xirr)) {
+                    xirrEl.textContent = `${xirr.toFixed(2)}%`;
+                    xirrEl.classList.remove('text-positive', 'text-negative');
+                    xirrEl.classList.add(xirr >= 0 ? 'text-positive' : 'text-negative');
+                } else {
+                    xirrEl.textContent = "0.00%";
+                }
+            } else {
+                xirrEl.textContent = "0.00%";
+                xirrEl.classList.remove('text-positive', 'text-negative');
+            }
+
+            // Update last updated timestamp
+            const dateOptions = { year: 'numeric', month: 'short', day: 'numeric' };
+            const lastUpdateDate = latestData.date;
+            lastUpdatedEl.textContent = `Last updated on ${lastUpdateDate.toLocaleDateString('en-US', dateOptions)}`;
+        };
+        
+        // Renders the table of past data points
+        const renderDataTable = () => {
+            const dataTableBody = document.getElementById('data-table-body');
+            dataTableBody.innerHTML = ''; // Clear the table
+
+            if (portfolioData.length === 0) {
+                // Clear sort icons if no data
+                document.querySelectorAll('.sort-icon').forEach(icon => icon.innerHTML = '');
+                return;
+            }
+
+            // Calculate profit/loss and percentage for each item before sorting
+            const dataWithCalculations = portfolioData.map(item => {
+                const profitLoss = item.value - item.invested;
+                const profitLossPercentage = (item.invested !== 0) ? (profitLoss / item.invested) * 100 : 0;
+                return { ...item, profitLoss, profitLossPercentage };
+            });
+
+            // Sort data based on the current sortColumn and sortDirection
+            const sortedData = [...dataWithCalculations].sort((a, b) => {
+                let aValue, bValue;
+                if (sortColumn === 'date') {
+                    aValue = a.date.getTime();
+                    bValue = b.date.getTime();
+                } else {
+                    aValue = a[sortColumn];
+                    bValue = b[sortColumn];
+                }
+
+                if (sortDirection === 'asc') {
+                    return aValue - bValue;
+                } else {
+                    return bValue - aValue;
+                }
+            });
+
+            // Update sort icons
+            document.querySelectorAll('.sort-btn').forEach(button => {
+                const sortIcon = button.querySelector('.sort-icon');
+                if (button.dataset.sortKey === sortColumn) {
+                    if (sortDirection === 'asc') {
+                        sortIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 20l8-8h-6V4h-4v8H4z"/></svg>`;
+                    } else {
+                        sortIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-8 8h6v8h4v-8h6z"/></svg>`;
+                    }
+                } else {
+                    sortIcon.innerHTML = '';
+                }
+            });
+
+            const disabledClass = 'cursor-not-allowed opacity-50';
+
+            sortedData.forEach(item => {
+                let profitLossClass = '';
+                if (item.profitLoss > 0) {
+                    profitLossClass = 'text-positive';
+                } else if (item.profitLoss < 0) {
+                    profitLossClass = 'text-negative';
+                }
+
+                let profitLossPercentageClass = '';
+                 if (item.profitLossPercentage > 0) {
+                    profitLossPercentageClass = 'text-positive';
+                } else if (item.profitLossPercentage < 0) {
+                    profitLossPercentageClass = 'text-negative';
+                }
+
+                const row = document.createElement('tr');
+                const editButtonClass = actionsEnabled ? 'hover:opacity-75' : disabledClass;
+                const deleteButtonClass = actionsEnabled ? 'hover:opacity-75' : disabledClass;
+                
+                row.innerHTML = `
+                    <td class="px-4 py-4 whitespace-nowrap text-sm font-medium" style="color: var(--text-color-primary);">${item.date.toLocaleDateString()}</td>
+                    <td class="px-4 py-4 whitespace-nowrap text-sm" style="color: var(--text-color-primary);">₹${formatNumberWithCommas(item.value)}</td>
+                    <td class="px-4 py-4 whitespace-nowrap text-sm" style="color: var(--text-color-primary);">₹${formatNumberWithCommas(item.invested)}</td>
+                    <td class="px-4 py-4 whitespace-nowrap text-sm font-medium ${profitLossClass}">₹${formatNumberWithCommas(item.profitLoss)}</td>
+                    <td class="px-4 py-4 whitespace-nowrap text-sm font-medium ${profitLossPercentageClass}">${item.profitLossPercentage.toFixed(2)}%</td>
+                    <td class="px-4 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                        <button data-id="${item.id}" class="edit-btn ${editButtonClass}" style="color: var(--primary-color);" ${actionsEnabled ? '' : 'disabled'}>Edit</button>
+                        <button data-id="${item.id}" class="delete-btn ${deleteButtonClass}" style="color: var(--negative-gain-color);" ${actionsEnabled ? '' : 'disabled'}>Delete</button>
+                    </td>
+                `;
+                dataTableBody.appendChild(row);
+            });
+        };
+        
+        // This is the new core logic for filtering and calculating chart data
+        const getChartData = (timeframe, calculationType) => {
+            if (portfolioData.length === 0) {
+                return { labels: [], values: [], investedValues: [] };
+            }
+
+            const sortedByDate = [...portfolioData].sort((a, b) => a.date - b.date);
+
+            if (timeframe === 'all') {
+                const labels = sortedByDate.map(item => item.date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }));
+                let values = [];
+                let investedValues = [];
+
+                if (calculationType === 'latest' || calculationType === 'average') {
+                    values = sortedByDate.map(item => item.value);
+                } else if (calculationType === 'gain') {
+                    // Total gain for each point is a simple value - invested
+                    values = sortedByDate.map(item => item.value - item.invested);
+                }
+                investedValues = sortedByDate.map(item => item.invested);
+
+                return { labels: labels, values: values, investedValues: investedValues };
+            }
+
+            // For monthly, quarterly, or yearly views
+            const groupedData = new Map();
+            sortedByDate.forEach(item => {
+                const date = item.date;
+                let key = '';
+                let label = '';
+
+                if (timeframe === 'monthly') {
+                    key = `${date.getFullYear()}-${date.getMonth()}`;
+                    label = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+                } else if (timeframe === 'quarterly') {
+                    const quarter = Math.floor(date.getMonth() / 3) + 1;
+                    key = `${date.getFullYear()}-Q${quarter}`;
+                    label = `${date.getFullYear()} Q${quarter}`;
+                } else if (timeframe === 'yearly') {
+                    key = `${date.getFullYear()}`;
+                    label = `${date.getFullYear()}`;
+                }
+                
+                if (!groupedData.has(key)) {
+                    groupedData.set(key, {
+                        dataPoints: []
+                    });
+                }
+                groupedData.get(key).dataPoints.push(item);
+            });
+
+            const labels = [];
+            const values = [];
+            const investedValues = [];
+
+            groupedData.forEach((group) => {
+                // The dataPoints array is already sorted by date
+                const lastItem = group.dataPoints[group.dataPoints.length - 1];
+                const firstItem = group.dataPoints[0];
+                
+                labels.push(lastItem.date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' }));
+                
+                let calculatedValue;
+                if (calculationType === 'latest') {
+                    calculatedValue = lastItem.value;
+                } else if (calculationType === 'average') {
+                    const sum = group.dataPoints.reduce((acc, curr) => acc + curr.value, 0);
+                    calculatedValue = sum / group.dataPoints.length;
+                } else if (calculationType === 'gain') {
+                    calculatedValue = lastItem.value - firstItem.invested;
+                }
+                values.push(calculatedValue);
+
+                // Use the invested amount from the latest data point in the period
+                investedValues.push(lastItem.invested);
+            });
+
+            return { labels: labels, values: values, investedValues: investedValues };
+        };
+
+        // Utility function to convert hex to RGBA for the chart background
+        function hexToRgba(hex, alpha) {
+            let r = 0, g = 0, b = 0;
+            if (hex.length === 4) {
+                r = parseInt(hex[1] + hex[1], 16);
+                g = parseInt(hex[2] + hex[2], 16);
+                b = parseInt(hex[3] + hex[3], 16);
+            } else if (hex.length === 7) {
+                r = parseInt(hex.substring(1, 3), 16);
+                g = parseInt(hex.substring(3, 5), 16);
+                b = parseInt(hex.substring(5, 7), 16);
+            }
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
+        // Function to initialize and update the Chart
+        const renderChart = () => {
+            const ctx = document.getElementById('growthChart').getContext('2d');
+            
+            // Destroy existing chart instance before creating a new one
+            if (myChart) {
+                myChart.destroy();
+            }
+            
+            // Register the datalabels plugin globally
+            Chart.register(ChartDataLabels);
+
+            // Get computed colors for the chart from CSS variables
+            const root = document.documentElement;
+            const chartGridColor = getComputedStyle(root).getPropertyValue('--chart-grid-color');
+            const chartLabelColor = getComputedStyle(root).getPropertyValue('--chart-label-color');
+            const chartTooltipBg = getComputedStyle(root).getPropertyValue('--chart-tooltip-bg');
+            const chartTooltipText = getComputedStyle(root).getPropertyValue('--chart-tooltip-text');
+            const positiveColor = getComputedStyle(root).getPropertyValue('--positive-gain-color');
+            const negativeColor = getComputedStyle(root).getPropertyValue('--negative-gain-color');
+            
+            // Get data based on selected timeframe and calculation type
+            const { labels, values, investedValues } = getChartData(chartTimeframe, chartCalculationType);
+
+            // Define common chart options
+            const commonOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        labels: {
+                            color: chartLabelColor,
+                        }
+                    },
+                    tooltip: {
+                        // Re-enable the native tooltip and customize it
+                        enabled: true,
+                        pointRadius:0,
+                        pointHoverRadius:6,
+                        mode: 'index', // Show tooltip for all datasets at that point
+                        intersect: false, 
+                        fill:true,// Show tooltip even if not directly over a point
+                        backgroundColor: chartTooltipBg,
+                        titleColor: chartTooltipText,
+                        bodyColor: chartTooltipText,
+                        borderColor: getComputedStyle(root).getPropertyValue('--border-color'),
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        padding: 12,
+                        callbacks: {
+                            title: function(context) {
+                                // Title is the date label
+                                return context[0].label;
+                            },
+                            label: function(context) {
+                                const datasetLabel = context.dataset.label || '';
+                                let tooltipLabel = '';
+                                if (datasetLabel.includes('Current Value')) {
+                                    const currentIndex = context.dataIndex;
+                                    const currentValue = context.raw;
+                                    let percentageChange = 0;
+                                    
+                                    // Calculate the percentage change from the previous data point
+                                    if (currentIndex > 0) {
+                                        const prevValue = context.dataset.data[currentIndex - 1];
+                                        if (prevValue !== 0) {
+                                            percentageChange = ((currentValue - prevValue) / prevValue) * 100;
+                                        }
+                                    }
+                                    
+                                    // Format the label to match the screenshot, with a comma separator
+                                    tooltipLabel = [`Current Value (₹): ${formatNumberWithCommas(currentValue)}`, `Change (%): ${percentageChange.toFixed(2)}%`];
+                                } else {
+                                    tooltipLabel = `${datasetLabel}: ₹${formatNumberWithCommas(context.raw)}`;
+                                }
+                                return tooltipLabel;
+                            }
+                        }
+                    },
+                    datalabels: {
+                        align: 'end',
+                        anchor: 'end',
+                        offset: 8,
+                        display:false,
+                        font: {
+                            size: 10,
+                            weight: 'bold'
+                        },
+                        // Custom formatter to show daily percentage change
+                        formatter: function(value, context) {
+                            // Only apply to the Current Value line
+                            if (context.dataset.label !== 'Current Value (₹)' || context.dataIndex === 0) {
+                                return '';
+                            }
+                            
+                            const prevValue = context.dataset.data[context.dataIndex - 1];
+                            const currentValue = value;
+                            
+                            if (prevValue === 0 || prevValue === null) return '0%';
+                            
+                            const percentageChange = ((currentValue - prevValue) / prevValue) * 100;
+                            return `${percentageChange.toFixed(2)}%`;
+                        },
+                        // Custom color based on the value change
+                        color: function(context) {
+                            // Only apply to the Current Value line
+                            if (context.dataset.label !== 'Current Value (₹)' || context.dataIndex === 0) {
+                                return 'transparent';
+                            }
+                            const prevValue = context.dataset.data[context.dataIndex - 1];
+                            const currentValue = context.dataset.data[context.dataIndex];
+
+                            return (currentValue - prevValue) >= 0 ? positiveColor : negativeColor;
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            color: chartLabelColor,
+                            maxRotation: 45,
+                            minRotation: 45,
+                        },
+                        grid: {
+                        display:false,
+                            color: chartGridColor,
+                        }
+                    },
+                    y: {
+                        ticks: {
+                        display:false,
+                            color: chartLabelColor,
+                        },
+                        grid: {
+                         display:false,
+                            color: chartGridColor,
+                        }
+                    }
+                },
+                hover: {
+                    mode: 'index',
+                    intersect: false,
+                }
+            };
+
+            if (chartType === 'line') {
+                const datasets = [];
+
+                if (showCurrentLine) {
+                    datasets.push({
+                        label: `Current Value (₹)`,
+                        data: values,
+                        borderColor: graphLineColor, // Use the user-selected color
+                        backgroundColor: hexToRgba(graphLineColor, 0.2), // Use a transparent version for the fill
+                        fill: 'origin',
+                        tension: 0.4,
+                        pointRadius:0,
+                        pointHoverRadius: 8, // Increase point radius on hover
+                    });
+                }
+                
+                if (showInvestedLine) {
+                    datasets.push({
+                        label: 'Invested Amount (₹)',
+                        data: investedValues,
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                        fill: false,
+                        tension: 0.4,
+                        pointStyle: 'crossRot',
+                    });
+                }
+                
+                const data = {
+                    labels: labels,
+                    datasets: datasets
+                };
+
+                const lineChartOptions = {
+                    ...commonOptions,
+                    scales: {
+                        ...commonOptions.scales,
+                        y: {
+                            type: 'linear',
+                            display: 'auto',
+                            position: 'left',
+                            ticks: { display:false,color: chartLabelColor },
+                            grid: { display:false,color: chartGridColor },
+                            title: {
+                                display: true,
+                                text: '',
+                                color: chartLabelColor
+                            }
+                        }
+                    }
+                };
+                
+                myChart = new Chart(ctx, {
+                    type: 'line',
+                    data: data,
+                    options: lineChartOptions,
+                    plugins: [ChartDataLabels]
+                });
+
+            } else if (chartType === 'pie') {
+                if (portfolioData.length === 0) {
+                    myChart = new Chart(ctx, { type: 'pie', data: { labels: [], datasets: [] }, options: commonOptions });
+                    return;
+                }
+                
+                const sortedByDate = [...portfolioData].sort((a, b) => a.date - b.date);
+                const latestData = sortedByDate[sortedByDate.length - 1];
+                const investedAmount = latestData.invested;
+                const profitLoss = latestData.value - latestData.invested;
+                
+                const pieData = {
+                    labels: ['Invested Amount', 'Profit/Loss'],
+                    datasets: [{
+                        data: [investedAmount, profitLoss],
+                        backgroundColor: [
+                            graphLineColor,
+                            profitLoss >= 0 ? positiveColor : negativeColor
+                        ],
+                        hoverOffset: 16,
+                        borderWidth: 2,
+                        borderColor: getComputedStyle(root).getPropertyValue('--bg-color-card')
+                    }]
+                };
+
+                const pieOptions = {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: chartLabelColor,
+                                usePointStyle: true,
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: chartTooltipBg,
+                            titleColor: chartTooltipText,
+                            bodyColor: chartTooltipText,
+                            borderColor: getComputedStyle(root).getPropertyValue('--border-color'),
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            padding: 12,
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label;
+                                    const value = context.parsed;
+                                    const total = context.dataset.data.reduce((sum, val) => sum + val, 0);
+                                    const percentage = (value / total * 100).toFixed(2);
+                                    return `${label}: ₹${formatNumberWithCommas(value)} (${percentage}%)`;
+                                }
+                            }
+                        },
+                        datalabels: {
+                            color: '#fff',
+                            formatter: (value) => {
+                                // Display the monetary value instead of the percentage
+                                return '₹' + formatNumberWithCommas(value);
+                            },
+                            font: {
+                                weight: 'bold'
+                            },
+                            padding: 6
+                        }
+                    }
+                };
+
+                myChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: pieData,
+                    options: pieOptions,
+                    plugins: [ChartDataLabels]
+                });
+            }
+        };
+        
+        // Resets the input form to its default state
+        const resetForm = () => {
+            document.getElementById('entry-date').value = '';
+            document.getElementById('new-value').value = '';
+            document.getElementById('invested-input').value = '';
+            
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.textContent = 'Add Data Point';
+            submitBtn.classList.remove('btn-secondary');
+            submitBtn.classList.add('btn-primary');
+
+            document.getElementById('cancel-btn').classList.add('hidden');
+
+            editingId = null; // Reset the editing ID
+        };
+
+        // Pre-populates the form for editing an existing data point
+        const setFormForEditing = (id) => {
+            const entry = portfolioData.find(item => item.id === id);
+            if (!entry) return;
+
+            const dateInput = document.getElementById('entry-date');
+            const valueInput = document.getElementById('new-value');
+            const investedInput = document.getElementById('invested-input');
+            const submitBtn = document.getElementById('submit-btn');
+            
+            // Format the date correctly for the input type="date"
+            const date = new Date(entry.date.getTime() - (entry.date.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+            
+            dateInput.value = date;
+            valueInput.value = entry.value;
+            investedInput.value = entry.invested;
+            submitBtn.textContent = 'Update Data Point';
+            submitBtn.classList.remove('btn-primary');
+            submitBtn.classList.add('btn-secondary');
+            
+            document.getElementById('cancel-btn').classList.remove('hidden');
+            
+            editingId = id; // Set the ID of the item being edited
+            showMessage(`Editing entry for ${entry.date.toLocaleDateString()}. Modify the values and click 'Update Data Point'.`);
+        };
+
+        // --- IndexedDB Functions for Data Persistence ---
+        const initDb = () => {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        db.createObjectStore(STORE_NAME);
+                    }
+                };
+
+                request.onsuccess = (event) => {
+                    db = event.target.result;
+                    resolve(db);
+                };
+
+                request.onerror = (event) => {
+                    console.error('IndexedDB error:', event.target.errorCode);
+                    reject(event.target.errorCode);
+                };
+            });
+        };
+
+        const saveData = () => {
+            if (!db) {
+                console.error('Database not initialized.');
+                return;
+            }
+            const transaction = db.transaction([STORE_NAME], 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            
+            // Save all the application's state
+            const dataToSave = {
+                portfolioData: portfolioData.map(item => ({
+                    ...item,
+                    date: item.date.toISOString() // Convert date to ISO string for storage
+                })),
+                theme: theme,
+                graphLineColor: graphLineColor
+            };
+            store.put(dataToSave, DATA_KEY);
+            
+            transaction.oncomplete = () => {
+                console.log('Data saved successfully.');
+            };
+
+            transaction.onerror = (event) => {
+                console.error('Save data error:', event.target.errorCode);
+            };
+        };
+
+        const loadData = () => {
+            return new Promise((resolve, reject) => {
+                if (!db) {
+                    console.error('Database not initialized.');
+                    resolve();
+                    return;
+                }
+                const transaction = db.transaction([STORE_NAME], 'readonly');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.get(DATA_KEY);
+
+                request.onsuccess = (event) => {
+                    const loadedData = event.target.result;
+                    if (loadedData) {
+                        // Restore state from loaded data
+                        portfolioData = loadedData.portfolioData.map(item => ({
+                            ...item,
+                            date: new Date(item.date) // Convert date string back to Date object
+                        }));
+                        theme = loadedData.theme || 'dark-theme';
+                        graphLineColor = loadedData.graphLineColor || '#7d44ff';
+                        
+                        applyThemePreset(theme);
+                        document.getElementById('graph-color-picker').value = graphLineColor;
+                    }
+                    resolve();
+                };
+
+                request.onerror = (event) => {
+                    console.error('Load data error:', event.target.errorCode);
+                    reject(event.target.errorCode);
+                };
+            });
+        };
+
+        // --- Event Listeners and Initialisation ---
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Wait for the database to be initialized
+            await initDb();
+            // Load any existing data from IndexedDB
+            await loadData();
+            
+            // Initial render of the UI
+            updateAllUI();
+        });
+
+        // Event listener for the data form submission
+        document.getElementById('data-form').addEventListener('submit', (event) => {
+            event.preventDefault();
+            
+            const dateInput = document.getElementById('entry-date');
+            const valueInput = document.getElementById('new-value');
+            const investedInput = document.getElementById('invested-input');
+            
+            const date = new Date(dateInput.value);
+            const value = parseFloat(valueInput.value);
+            const invested = parseFloat(investedInput.value);
+
+            if (editingId) {
+                // Find and update existing data point
+                const index = portfolioData.findIndex(item => item.id === editingId);
+                if (index !== -1) {
+                    // Create a new object to avoid potential reference issues
+                    portfolioData[index] = { ...portfolioData[index], date, value, invested };
+                }
+                showMessage('Data point updated successfully!');
+            } else {
+                // Add new data point with a unique ID
+                portfolioData.push({ id: generateUUID(), date, value, invested });
+                showMessage('New data point added successfully!');
+            }
+            
+            updateAllUI();
+            resetForm();
+        });
+        
+        // Event listener for the cancel button
+        document.getElementById('cancel-btn').addEventListener('click', () => {
+            resetForm();
+        });
+        
+        // The fix for the edit/delete buttons is here. Using event delegation with a more robust check for the button.
+        document.getElementById('data-table-body').addEventListener('click', (event) => {
+            const targetButton = event.target.closest('button');
+            if (!targetButton || targetButton.disabled) return;
+            
+            const id = targetButton.dataset.id;
+            if (!id) return;
+            
+            if (targetButton.classList.contains('edit-btn')) {
+                setFormForEditing(id);
+            } else if (targetButton.classList.contains('delete-btn')) {
+                showMessage('Are you sure you want to delete this data point?', 'confirm', () => {
+                    portfolioData = portfolioData.filter(item => item.id !== id);
+                    updateAllUI();
+                    showMessage('Data point deleted successfully.');
+                });
+            }
+        });
+        
+        // Event listeners for sorting the table
+        document.querySelectorAll('.sort-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                const key = button.dataset.sortKey;
+                if (sortColumn === key) {
+                    sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    sortColumn = key;
+                    sortDirection = 'desc'; // Default to descending for new column
+                }
+                renderDataTable();
+                saveData();
+            });
+        });
+        
+        // Event listener for the menu button
+        document.getElementById('menu-btn').addEventListener('click', () => {
+            document.getElementById('settings-menu').classList.toggle('visible');
+        });
+        
+        // Close menu if user clicks outside
+        document.addEventListener('click', (event) => {
+            const menu = document.getElementById('settings-menu');
+            const menuBtn = document.getElementById('menu-btn');
+            if (!menu.contains(event.target) && !menuBtn.contains(event.target)) {
+                menu.classList.remove('visible');
+            }
+        });
+
+        // Event listener to toggle actions
+        document.getElementById('toggle-actions-btn').addEventListener('click', (event) => {
+            actionsEnabled = !actionsEnabled;
+            event.target.textContent = actionsEnabled ? 'Disable Actions' : 'Enable Actions';
+
+            // Also disable/enable the "Clear All" button based on the state
+            const clearAllBtn = document.getElementById('clear-data-btn');
+            if (actionsEnabled) {
+                clearAllBtn.disabled = false;
+                clearAllBtn.classList.remove('disabled-btn');
+            } else {
+                clearAllBtn.disabled = true;
+                clearAllBtn.classList.add('disabled-btn');
+            }
+            
+            renderDataTable();
+        });
+
+        // Event listener to clear all data
+        document.getElementById('clear-data-btn').addEventListener('click', () => {
+            showMessage('Are you sure you want to delete all data points?', 'confirm', () => {
+                portfolioData = [];
+                updateAllUI();
+                showMessage('All data has been cleared.');
+            });
+        });
+
+        // Event listeners for theme presets
+        document.getElementById('theme-dark').addEventListener('click', () => applyThemePreset('dark-theme'));
+        document.getElementById('theme-light').addEventListener('click', () => applyThemePreset('light-theme'));
+        
+        // Event listener for the color picker
+        document.getElementById('graph-color-picker').addEventListener('input', (event) => {
+            graphLineColor = event.target.value;
+            renderChart();
+        });
+        document.getElementById('graph-color-picker').addEventListener('change', () => {
+            saveData();
+        });
+
+        // Event listener for the reset color button
+        document.getElementById('reset-colors-btn').addEventListener('click', resetGraphColor);
+        
+        // Function to update the style of the timeframe buttons
+        const updateTimeframeButtons = (activeTimeframe) => {
+            const buttons = ['all', 'monthly', 'quarterly', 'yearly'];
+            buttons.forEach(btnId => {
+                const btn = document.getElementById(`timeframe-${btnId}`);
+                if (btnId === activeTimeframe) {
+                    btn.classList.remove('btn-secondary');
+                    btn.classList.add('btn-primary');
+                } else {
+                    btn.classList.remove('btn-primary');
+                    btn.classList.add('btn-secondary');
+                }
+            });
+        };
+
+        // Event listeners for timeframe buttons
+        document.getElementById('timeframe-monthly').addEventListener('click', () => {
+            chartTimeframe = 'monthly';
+            updateTimeframeButtons('monthly');
+            renderChart();
+        });
+        document.getElementById('timeframe-quarterly').addEventListener('click', () => {
+            chartTimeframe = 'quarterly';
+            updateTimeframeButtons('quarterly');
+            renderChart();
+        });
+        document.getElementById('timeframe-yearly').addEventListener('click', () => {
+            chartTimeframe = 'yearly';
+            updateTimeframeButtons('yearly');
+            renderChart();
+        });
+        document.getElementById('timeframe-all').addEventListener('click', () => {
+            chartTimeframe = 'all';
+            updateTimeframeButtons('all');
+            renderChart();
+        });
+
+        // Event listeners for chart type buttons
+        document.getElementById('chart-type-line').addEventListener('click', () => {
+            chartType = 'line';
+            document.getElementById('chart-type-line').classList.remove('btn-secondary');
+            document.getElementById('chart-type-line').classList.add('btn-primary');
+            document.getElementById('chart-type-pie').classList.remove('btn-primary');
+            document.getElementById('chart-type-pie').classList.add('btn-secondary');
+            renderChart();
+        });
+        
+        document.getElementById('chart-type-pie').addEventListener('click', () => {
+            chartType = 'pie';
+            document.getElementById('chart-type-pie').classList.remove('btn-secondary');
+            document.getElementById('chart-type-pie').classList.add('btn-primary');
+            document.getElementById('chart-type-line').classList.remove('btn-primary');
+            document.getElementById('chart-type-line').classList.add('btn-secondary');
+            renderChart();
+        });
+        
+        // Event listeners for toggling lines on the chart
+        document.getElementById('toggle-current-btn').addEventListener('click', (event) => {
+            showCurrentLine = !showCurrentLine;
+            event.target.textContent = showCurrentLine ? 'Hide Current Value' : 'Show Current Value';
+            renderChart();
+        });
+        
+        document.getElementById('toggle-invested-btn').addEventListener('click', (event) => {
+            showInvestedLine = !showInvestedLine;
+            event.target.textContent = showInvestedLine ? 'Hide Invested Amount' : 'Show Invested Amount';
+            renderChart();
+        });
+
+        // New dropdown logic for chart calculation type
+        const calcDropdownBtn = document.getElementById('calc-dropdown-btn');
+        const calcDropdownMenu = document.getElementById('calc-dropdown-menu');
+        const calcDropdownLabel = document.getElementById('calc-dropdown-label');
+
+        calcDropdownBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            calcDropdownMenu.classList.toggle('visible');
+        });
+
+        document.querySelectorAll('#calc-dropdown-menu a').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                const newCalcType = e.target.dataset.value;
+                let newLabel = e.target.textContent;
+                
+                chartCalculationType = newCalcType;
+                calcDropdownLabel.textContent = newLabel;
+                calcDropdownMenu.classList.remove('visible');
+                
+                renderChart();
+            });
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!calcDropdownBtn.contains(e.target) && !calcDropdownMenu.contains(e.target)) {
+                calcDropdownMenu.classList.remove('visible');
+            }
+        });
+
+        // Import and Export functionality
+        const exportData = () => {
+            const dataToExport = {
+                portfolioData: portfolioData.map(item => ({...item, date: item.date.toISOString()})),
+                theme: theme,
+                graphLineColor: graphLineColor
+            };
+            const jsonString = JSON.stringify(dataToExport, null, 2);
+            const blob = new Blob([jsonString], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'investment_data.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showMessage('Data exported successfully!');
+        };
+
+        const importData = (file) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (importedData.portfolioData && Array.isArray(importedData.portfolioData)) {
+                        portfolioData = importedData.portfolioData.map(item => ({
+                            ...item,
+                            date: new Date(item.date)
+                        }));
+                        theme = importedData.theme || 'dark-theme';
+                        graphLineColor = importedData.graphLineColor || '#7d44ff';
+                        
+                        applyThemePreset(theme);
+                        document.getElementById('graph-color-picker').value = graphLineColor;
+                        updateAllUI();
+                        showMessage('Data imported successfully!');
+                    } else {
+                        showMessage('Invalid JSON format. Please ensure the file contains a "portfolioData" array.');
+                    }
+                } catch (error) {
+                    console.error('Error importing data:', error);
+                    showMessage('Error importing file. Please ensure the file is a valid JSON file with the correct data structure.');
+                }
+            };
+            reader.readAsText(file);
+        };
+
+        document.getElementById('export-btn').addEventListener('click', exportData);
+        document.getElementById('import-btn').addEventListener('click', () => {
+            document.getElementById('import-file-input').click();
+        });
+        document.getElementById('import-file-input').addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                importData(file);
+            }
+        });
+    </script>
+</body>
+</html>
+</body>
+</html>

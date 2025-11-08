@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logout</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        :root { --primary-blue: #3b82f6; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #101f30;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .logout-card {
+            background: linear-gradient(135deg, #1c2e42 0%, #293d55 100%);
+            color: #e0f2fe;
+            border: 1px solid #334e68;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            padding: 2rem;
+            text-align: center;
+            max-width: 350px;
+            width: 90%;
+            animation: fadeIn 0.8s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .logout-button {
+            background-color: var(--primary-blue);
+            color: white;
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            margin-top: 1.5rem;
+            transition: 0.3s;
+        }
+        .logout-button:hover {
+            background-color: #2563eb;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="logout-card">
+        <h1 class="text-2xl font-bold mb-3">Logged Out</h1>
+        <p class="text-sm text-slate-300 mb-6">You’ve been logged out successfully.</p>
+        <button onclick="logoutUser();" class="logout-button w-full">Return to Login</button>
+    </div>
+
+    <!-- Include logout.js for clearing user data -->
+    
+    <script>
+    
+    // Function to logout user and clear local storage
+    function logoutUser() {
+    localStorage.removeItem('userId');
+    localStorage.removeItem('password');
+    window.location.href = 'index.html'; // Redirect back to login page
+    }
+        // Automatically log out when this page loads
+        
+
+        // After clearing, stay here until user clicks button
+        function goToLogin() {
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>
